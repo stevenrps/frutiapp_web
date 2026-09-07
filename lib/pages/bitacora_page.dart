@@ -1,10 +1,7 @@
-import 'dart:convert';
-
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:web/web.dart' as web;
 
 import '../services/access_log_service.dart';
+import '../services/json_file_service.dart';
 
 class BitacoraPage extends StatefulWidget {
   final AccessLogService logService;
@@ -19,23 +16,15 @@ class BitacoraPage extends StatefulWidget {
 }
 
 class _BitacoraPageState extends State<BitacoraPage> {
+  final JsonFileService jsonFileService = JsonFileService();
+
   Future<void> importarBitacora() async {
-    const typeGroup = XTypeGroup(
-      label: 'JSON',
-      extensions: ['json'],
-      mimeTypes: ['application/json'],
-    );
-
-    final XFile? file = await openFile(
-      acceptedTypeGroups: [typeGroup],
-    );
-
-    if (file == null) {
-      return;
-    }
-
     try {
-      final contenido = await file.readAsString();
+      final contenido = await jsonFileService.seleccionarJson();
+
+      if (contenido == null) {
+        return;
+      }
 
       widget.logService.importJson(contenido);
 
@@ -79,23 +68,12 @@ class _BitacoraPageState extends State<BitacoraPage> {
     }
   }
 
-  void descargarJson(String contenido) {
-    final base64 = base64Encode(
-      utf8.encode(contenido),
-    );
-
-    web.HTMLAnchorElement()
-      ..href = 'data:application/json;base64,$base64'
-      ..setAttribute(
-        'download',
-        'bitacora_accesos.json',
-      )
-      ..click();
-  }
-
   void exportarBitacora() {
-    descargarJson(
-      widget.logService.exportJson(),
+    final contenido = widget.logService.exportJson();
+
+    jsonFileService.descargarJson(
+      contenido: contenido,
+      nombreArchivo: 'bitacora_accesos.json',
     );
   }
 
@@ -191,9 +169,7 @@ class _BitacoraPageState extends State<BitacoraPage> {
                             registro.fechaHora.toString(),
                           ),
                           trailing: Text(
-                            registro.exitoso
-                                ? 'OK'
-                                : 'FALLÓ',
+                            registro.exitoso ? 'OK' : 'FALLÓ',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: registro.exitoso

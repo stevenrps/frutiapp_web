@@ -1,30 +1,35 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:frutiapp_web/main.dart';
+import 'package:frutiapp_web/models/access_record.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('AccessRecord convierte correctamente a JSON', () {
+    final registro = AccessRecord(
+      usuario: 'admin@frutiapp.com',
+      fechaHora: DateTime(2026, 9, 7, 10, 30),
+      exitoso: true,
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final json = registro.toJson();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    expect(json['usuario'], 'admin@frutiapp.com');
+    expect(json['exitoso'], true);
+    expect(json['fechaHora'], '2026-09-07T10:30:00.000');
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('AccessRecord se reconstruye correctamente desde JSON', () {
+    final json = {
+      'usuario': 'usuario@correo.com',
+      'fechaHora': '2026-09-07T12:00:00.000',
+      'exitoso': false,
+    };
+
+    final registro = AccessRecord.fromJson(json);
+
+    expect(registro.usuario, 'usuario@correo.com');
+    expect(registro.exitoso, false);
+    expect(
+      registro.fechaHora,
+      DateTime(2026, 9, 7, 12, 0),
+    );
   });
 }
