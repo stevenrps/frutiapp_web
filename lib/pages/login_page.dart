@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../models/access_record.dart';
 import '../services/access_log_service.dart';
+import '../services/preferences_service.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   final AccessLogService logService;
+  final PreferencesService preferencesService;
 
   const LoginPage({
     super.key,
     required this.logService,
+    required this.preferencesService,
   });
 
   @override
@@ -24,7 +27,31 @@ class _LoginPageState extends State<LoginPage> {
 
   bool recordarme = false;
 
-  void ingresar() {
+  @override
+  void initState() {
+    super.initState();
+
+    _cargarPreferencias();
+  }
+
+  Future<void> _cargarPreferencias() async {
+    final recordar = await widget.preferencesService.obtenerRecordarme();
+    final usuario = await widget.preferencesService.obtenerUsuario();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      recordarme = recordar;
+
+      if (recordar && usuario != null) {
+        correoController.text = usuario;
+      }
+    });
+  }
+
+  Future<void> ingresar() async {
     final formularioValido = _formKey.currentState!.validate();
 
     final usuario = correoController.text.trim();
@@ -48,6 +75,15 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (exitoso) {
+      await widget.preferencesService.guardarUsuario(
+        usuario: usuario,
+        recordarme: recordarme,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -57,9 +93,15 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } else {
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Correo o contraseña incorrectos'),
+          content: Text(
+            'Correo o contraseña incorrectos',
+          ),
         ),
       );
     }
@@ -96,7 +138,9 @@ class _LoginPageState extends State<LoginPage> {
                       size: 70,
                       color: Colors.green,
                     ),
+
                     const SizedBox(height: 15),
+
                     const Text(
                       'FrutiApp',
                       style: TextStyle(
@@ -104,9 +148,9 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(height: 30),
 
-                    // Correo
                     TextFormField(
                       controller: correoController,
                       decoration: const InputDecoration(
@@ -129,7 +173,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
 
-                    // Contraseña
                     TextFormField(
                       controller: passwordController,
                       obscureText: true,
@@ -149,7 +192,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 10),
 
-                    // Recordarme
                     Row(
                       children: [
                         Checkbox(
@@ -166,7 +208,6 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 15),
 
-                    // Ingresar
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
